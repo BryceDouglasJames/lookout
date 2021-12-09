@@ -1,31 +1,55 @@
 package pool
 
 import (
+	"context"
+	"flag"
+	"fmt"
+	"io"
 	"sync"
+	"time"
+
+	worker "github.com/brycedouglasjames/lookout/worker_dispatch"
 )
 
-//FUNCTIONS
-/*
-what are the properities of the instance?
-		context of the request
-			whos the user
-			what do they want done
-			handle errors
+type Instance_Object interface {
+	GetID() int
+	Current_Time() time.Time
+	Creation_Time() time.Time
+	Destruction_Time() time.Time
+}
 
-		-pool duplex
-			how is this started? how will it end?
-			where did it come from?
+type Instance_Node struct {
+	ctx  context.Context
+	pool Driver_Pool
+	Instance_Object
+}
 
-		log every event
-*/
+func (n *Instance_Node) toString() string {
+	return fmt.Sprintf("%v", n.pool.ActiveQueue)
+}
 
-type PoolObject interface {
-	getID() int
+type Instance_Graph struct {
+	nodes []*Instance_Node
+	edges map[context.Context][]*Instance_Node
+	lock  sync.RWMutex
+}
+
+//TODO add user asscoiation with each creation
+type spider struct {
+	Name           string
+	Reader         io.Reader
+	Writer         io.Writer
+	Master_Context context.Context
+	Tasks          []*worker.Job_Type
+	Flags          []*flag.Flag
+	Instance_Graph
+	//...
+	//metadata
 }
 
 type Driver_Pool struct {
-	Waiting  []PoolObject
-	Active   []PoolObject
-	Capacity int
-	Mulock   *sync.Mutex
+	Capacity    int
+	WaitQueue   []Instance_Object
+	ActiveQueue []Instance_Object
+	Mulock      *sync.Mutex
 }

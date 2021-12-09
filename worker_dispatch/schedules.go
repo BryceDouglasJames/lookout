@@ -10,19 +10,21 @@ import (
 var Driver_Pool chan chan Job_Type
 
 func Schedule_Grailed_User_Search(ctx context.Context) {
-	log.Println("Started a search on user search")
+	log.Println("Started a Grail search")
 	wg := sync.WaitGroup{}
 
+	//TODO associate and add context  to each search with some id to grab from pool
 	worker_map := Web_Drivers_Init(1, Driver_Pool, &wg)
-	temp := GetImage{name: "help", wait_group: &wg}
+	temp := Grailed_Items{wg: &wg}
 
 	for key, item := range worker_map {
-		item.Start(key)
+		fmt.Println("Searching...")
+		//item.Start(key)
 		temp.traverse_elm_tree("Raf")
 		fmt.Printf("Key: %d :: Value: %+v\n", key, item)
 	}
 
 	wg.Wait()
-	log.Println("Finsihed with items")
+	log.Println("Finished with items")
 
 }

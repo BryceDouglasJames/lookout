@@ -1,6 +1,7 @@
 package worker_dispatch
 
 import (
+	"context"
 	"log"
 	"runtime"
 	"sync"
@@ -11,8 +12,8 @@ import (
 )
 
 type Web_Driver_Worker struct {
-	ID int
-	//	ctx     context.Context
+	ID            int
+	ctx           context.Context
 	Waiting       *sync.WaitGroup
 	Master_signal chan chan Job_Type
 	Job           chan Job_Type
@@ -33,35 +34,44 @@ func Web_Drivers_Init(size int, master_queue chan chan Job_Type, done *sync.Wait
 		}
 		drivers[i] = *conn
 	}
+
 	return drivers
+
 }
 
-func (w *Web_Driver_Worker) Job_Packager(job Job_Type) {
+func (w *Web_Driver_Worker) Job_Queue(job Job_Type) {
 	go func() {
 		if fail := recover(); fail != nil {
 			const size = 64 << 10
 			buf := make([]byte, size)
 			buf = buf[:runtime.Stack(buf, false)]
 			log.Println("panicing!")
+			w.Exit <- true
 		}
+
 	}()
 	job.Do()
 }
 
 func (w *Web_Driver_Worker) Start(id int) {
 	go func() {
+		w.Waiting.Wait()
 		w.Waiting.Add(1)
 		for {
 			w.Master_signal <- w.Job
 			select {
 			case job := <-w.Job:
-				w.Job_Packager(job)
+				w.Job_Queue(job)
 			case <-w.Exit:
+				//w.Stop()
 				w.Waiting.Done()
 				return
 			}
 		}
 	}()
+}
+
+func (w *Web_Driver_Worker) Stop(id int) {
 }
 
 func Browser_test() string {
