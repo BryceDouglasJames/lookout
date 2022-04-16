@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"sync"
 	"time"
 
 	obj_pool "github.com/brycedouglasjames/lookout/pool"
@@ -30,6 +31,11 @@ func main() {
 	//DO NOT USE BUILT IN TYPES FOR KEY
 	c1 := context.WithValue(context.Background(), "quick", 1)
 	processor_trigger, _ := scheduler.Add_Process(c1, worker.Schedule_Grailed_User_Search, time.Second*15, true)
+
+	//initizalize driver pool with signal queue
+	queue_wg := new(sync.WaitGroup)
+	Job_Queue := make(chan chan worker.Job_Type)
+	worker.Web_Drivers_Init(5, Job_Queue, queue_wg)
 
 	time.AfterFunc(5*time.Second, func() {
 		fmt.Println("Triggered grailed search")

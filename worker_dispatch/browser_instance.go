@@ -34,9 +34,7 @@ func Web_Drivers_Init(size int, master_queue chan chan Job_Type, done *sync.Wait
 		}
 		drivers[i] = *conn
 	}
-
 	return drivers
-
 }
 
 func (w *Web_Driver_Worker) Job_Queue(job Job_Type) {

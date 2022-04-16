@@ -57,7 +57,7 @@ func (job *Grailed_Items) traverse_elm_tree(s string) {
 	searchbar.MustElementR("button", "Search").MustTap()
 	page.Keyboard.MustPress(input.Escape)
 	searchbar.MustElement("input").MustInput(s)
-	searchbar.MustElementR("button", "Search").MustTap().MustClick()
+	searchbar.MustElementR("button", "search").MustTap().MustClick()
 	itemView := page.MustWaitLoad().MustElementX("/html/body/div[3]/div[7]/div/div/div[3]/div[2]/div")
 	for i := 0; i < 3; i++ {
 		itemView.Page().Mouse.MustScroll(0, 10000)
