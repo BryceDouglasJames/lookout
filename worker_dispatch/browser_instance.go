@@ -2,7 +2,13 @@ package worker_dispatch
 
 import (
 	"context"
+	"fmt"
 	"log"
+	"time"
+
+	//"time"
+
+	//"reflect"
 	"runtime"
 	"sync"
 
@@ -43,30 +49,27 @@ func (w *Web_Driver_Worker) Job_Queue(job Job_Type) {
 			const size = 64 << 10
 			buf := make([]byte, size)
 			buf = buf[:runtime.Stack(buf, false)]
+			fmt.Println(buf)
 			log.Println("panicing!")
 			w.Exit <- true
 		}
-
 	}()
 	job.Do()
 }
 
-func (w *Web_Driver_Worker) Start(id int) {
-	go func() {
-		w.Waiting.Wait()
-		w.Waiting.Add(1)
-		for {
-			w.Master_signal <- w.Job
-			select {
-			case job := <-w.Job:
-				w.Job_Queue(job)
-			case <-w.Exit:
-				//w.Stop()
-				w.Waiting.Done()
-				return
-			}
-		}
-	}()
+func (w *Web_Driver_Worker) Start(Job_Type interface{}) {
+	w.Waiting.Wait()
+	w.Waiting.Add(1)
+	fmt.Println("PROGRESS................")
+	time.Sleep(1 * time.Second)
+	switch t := Job_Type.(type) {
+	case GetImage:
+		w.Job_Queue(t)
+	default:
+		fmt.Printf("ERROR %#v\n", t)
+	}
+	//w.Waiting.Done()
+
 }
 
 func (w *Web_Driver_Worker) Stop(id int) {

@@ -3,6 +3,7 @@ package web_interface
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -64,6 +65,7 @@ func Parse_Href_Tags(id int16, doc *html.Node, search_key string) error {
 		link_slice = user.link_map[search_key]
 	}
 
+	fmt.Println("Fun stuff...")
 	//crawl through the doc and add <a href=""> values
 	crawl = func(node *html.Node) {
 		for childNode := node.FirstChild; childNode != nil; childNode = childNode.NextSibling {
@@ -87,9 +89,9 @@ func Parse_Href_Tags(id int16, doc *html.Node, search_key string) error {
 	user.link_map[search_key] = link_slice
 
 	//uncomment to see link objects
-	/*for _, s := range user.link_map[search_key] {
+	for _, s := range user.link_map[search_key] {
 		fmt.Println(s)
-	}*/
+	}
 
 	return errors.New("")
 }

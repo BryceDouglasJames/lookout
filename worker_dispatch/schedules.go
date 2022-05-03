@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"sync"
+	"time"
 )
 
 var Driver_Pool chan chan Job_Type
@@ -27,4 +28,43 @@ func Schedule_Grailed_User_Search(ctx context.Context) {
 	wg.Wait()
 	log.Println("Finished with items")
 
+}
+
+func Generate_Root_Search(ctx context.Context) {
+	log.Println("Started General Search ...")
+
+	wg := sync.WaitGroup{}
+
+	//TODO associate and add context  to each search with some id to grab from pool
+	worker_map := Web_Drivers_Init(1, Driver_Pool, &wg)
+
+	/*type favContextKey string
+		f := func(ctx context.Context, k favContextKey) {
+			if v := ctx.Value(k); v != nil {
+				fmt.Println("found value:", v)
+				return
+			}
+			fmt.Println("key not found:", k)
+	}
+		k := favContextKey("TEST")
+		f(ctx, k)
+	*/
+
+	switch t := ctx.Value("TEST").(type) {
+	case string:
+		temp := GetImage{
+			id:  "GETIMAGE",
+			wg:  &wg,
+			URL: string(t),
+		}
+		for key, item := range worker_map {
+			fmt.Println("Searching...")
+			time.Sleep(2 * time.Second)
+			item.Start(temp)
+			fmt.Printf("Key: %d :: Value: %+v\n", key, item)
+		}
+	default:
+		fmt.Println("What is this?")
+	}
+	log.Println("Finished with regular search")
 }

@@ -1,10 +1,12 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"fmt"
+	"io"
 	"os"
-	"os/signal"
+	//"os/signal"
 	"sync"
 	"time"
 
@@ -26,31 +28,75 @@ func main() {
 	*	To stop scheduler, send exit channel from os ^c
 	 */
 
-	scheduler := worker.CreateScheduler()
-	//TODO make type system for scheduler
-	//DO NOT USE BUILT IN TYPES FOR KEY
-	c1 := context.WithValue(context.Background(), "quick", 1)
-	processor_trigger, _ := scheduler.Add_Process(c1, worker.Schedule_Grailed_User_Search, time.Second*15, true)
-
-	//initizalize driver pool with signal queue
-	queue_wg := new(sync.WaitGroup)
-	Job_Queue := make(chan chan worker.Job_Type)
-	worker.Web_Drivers_Init(5, Job_Queue, queue_wg)
-
-	time.AfterFunc(5*time.Second, func() {
-		fmt.Println("Triggered grailed search")
-		processor_trigger <- true
-	})
-
-	log_writer(time.Now(), "Made a grailed search... meta.")
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, os.Interrupt)
-	<-quit
+	Launch_Prompt()
 }
 
 func Display_Error(err error) {
 	fmt.Println(err)
 }
+
+func Launch_Prompt() {
+	fmt.Printf("\n\nHello %s! Welcome to my crawler thing \n*** type -help for commands ***\n\n", "User")
+	Start(os.Stdin, os.Stdout, "User")
+
+}
+
+func Ingest_Url(url string) string {
+	scheduler := worker.CreateScheduler()
+	//TODO make type system for scheduler
+	//DO NOT USE BUILT IN TYPES FOR KEY
+	c1 := context.WithValue(context.Background(), string("TEST"), url)
+	//initizalize driver pool with signal queue
+	queue_wg := new(sync.WaitGroup)
+	Job_Queue := make(chan chan worker.Job_Type)
+	worker.Web_Drivers_Init(1, Job_Queue, queue_wg)
+	//append(scheduler.OngoingJobs, worker[0].Job)
+
+	//processor_trigger <- true
+	processor_trigger, Kill_s := scheduler.Add_Process(c1, worker.Generate_Root_Search, time.Second*10, true)
+	time.AfterFunc(5*time.Second, func() {
+		processor_trigger <- true
+	})
+	time.AfterFunc(30*time.Second, func() {
+		Kill_s <- true
+	})
+	//scheduler.StopAll()
+	//log_writer(time.Now(), "Triggered search on "+url+" finsihed in ...")
+
+	//Kill_Processor(scheduler) d
+	//Launch_Prompt()
+	return "DONE"
+}
+
+func Start(in io.Reader, out io.Writer, name string) {
+	scanner := bufio.NewScanner(in)
+	for {
+		fmt.Fprintf(out, name+" "+">>")
+		scanned := scanner.Scan()
+		if !scanned || scanner.Text() == "" {
+			return
+		}
+		line := scanner.Text()
+		if line == "-help" {
+			fmt.Print("HOW TO USE: \n\tstring URL: Get Screenshot of page, save as a.png.\n\t-q: quit\n\n")
+		} else if line == "-q" {
+			os.Exit(3)
+		} else {
+			var key interface{} = line
+			var val string = key.(string)
+			answer := Ingest_Url(val)
+			if answer != "DONE" {
+				break
+			}
+		}
+	}
+}
+
+/*func Kill_Processor(scheduler *worker.Scheduler) {
+	c1 := context.WithValue(context.Background(), string("KILL"), "kill")
+	processor_trigger, _ := scheduler.Add_Process(c1, nil, time.Second*15, true)
+	processor_trigger <- true
+}/*
 
 func log_writer(time time.Time, message string) {
 	file, err := os.OpenFile("activity.log", os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0600)

@@ -2,13 +2,19 @@ package worker_dispatch
 
 import (
 	"fmt"
+	"io"
 	"log"
+	"net/http"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/go-rod/rod"
 	"github.com/go-rod/rod/lib/devices"
 	"github.com/go-rod/rod/lib/input"
+	"golang.org/x/net/html"
+
+	web "github.com/brycedouglasjames/lookout/web_interface"
 )
 
 //functions that can be called from the outside...duh
@@ -16,17 +22,35 @@ type Job_Type interface {
 	Do()
 }
 
-/******TAKE SCRRENSHOT OF PAGE******/
+/******TAKE SCREENSHOT OF PAGE******/
 type GetImage struct {
-	wg *sync.WaitGroup
+	id  string
+	wg  *sync.WaitGroup
+	URL string
 }
 
-func (job *GetImage) Do() {
+func (job GetImage) Do() {
 	job.wg.Add(1)
 	time.Sleep(1 * time.Second)
-	page := rod.New().MustConnect().MustPage("https://www.wikipedia.com/")
+	fmt.Println("TAKING SCREENSHOT....")
+	page := rod.New().MustConnect().MustPage(job.URL)
 	page.MustWaitLoad().MustScreenshot("a.png")
 	log.Println(page.String())
+	page.Close()
+
+	resp, err := http.Get(job.URL)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	b, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+	doc, _ := html.Parse(strings.NewReader(string(b)))
+
+	web.Parse_Href_Tags(16, doc, "WIKI")
 	job.wg.Done()
 }
 
@@ -35,6 +59,12 @@ func (job *GetImage) Do() {
 /*******SEARCH GRAILED FOR ITEM BASED SEARCH*******/
 type Grailed_Items struct {
 	wg *sync.WaitGroup
+}
+
+func (job *Grailed_Items) Get_Grailed_Item() {
+	job.wg.Add(1)
+	time.Sleep(1 * time.Second)
+	job.traverse_elm_tree("RAF")
 }
 
 func (job *Grailed_Items) traverse_elm_tree(s string) {
