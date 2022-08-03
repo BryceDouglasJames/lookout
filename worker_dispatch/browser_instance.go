@@ -1,7 +1,6 @@
 package worker_dispatch
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"time"
@@ -18,8 +17,8 @@ import (
 )
 
 type Web_Driver_Worker struct {
-	ID            int
-	ctx           context.Context
+	ID int
+	// will need eventually ctx           context.Context
 	Waiting       *sync.WaitGroup
 	Master_signal chan chan Job_Type
 	Job           chan Job_Type

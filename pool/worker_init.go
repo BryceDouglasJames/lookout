@@ -1,4 +1,4 @@
-package main
+package pool
 
 import (
 	"bufio"
@@ -6,19 +6,23 @@ import (
 	"fmt"
 	"io"
 	"os"
+
 	//"os/signal"
 	"sync"
 	"time"
 
-	obj_pool "github.com/brycedouglasjames/lookout/pool"
+	//obj_pool "github.com/brycedouglasjames/lookout/pool"
 	worker "github.com/brycedouglasjames/lookout/worker_dispatch"
 )
 
+type key string
+
 var (
-	Driver_Pool *obj_pool.Driver_Pool
+	Pool    *Driver_Pool
+	DEFAULT key = "TEST"
 )
 
-func main() {
+func init() {
 
 	/*
 	*	This is a quick example of how to launch a crawler process.
@@ -44,8 +48,10 @@ func Launch_Prompt() {
 func Ingest_Url(url string) string {
 	scheduler := worker.CreateScheduler()
 	//TODO make type system for scheduler
-	//DO NOT USE BUILT IN TYPES FOR KEY
-	c1 := context.WithValue(context.Background(), string("TEST"), url)
+
+	//***************DO NOT USE BUILT IN TYPES FOR KEY TO AVOID COLLISIONS**************
+	c1 := context.WithValue(context.Background(), DEFAULT, url)
+
 	//initizalize driver pool with signal queue
 	queue_wg := new(sync.WaitGroup)
 	Job_Queue := make(chan chan worker.Job_Type)
@@ -92,11 +98,12 @@ func Start(in io.Reader, out io.Writer, name string) {
 	}
 }
 
-/*func Kill_Processor(scheduler *worker.Scheduler) {
+/*
+func Kill_Processor(scheduler *worker.Scheduler) {
 	c1 := context.WithValue(context.Background(), string("KILL"), "kill")
 	processor_trigger, _ := scheduler.Add_Process(c1, nil, time.Second*15, true)
 	processor_trigger <- true
-}/*
+}
 
 func log_writer(time time.Time, message string) {
 	file, err := os.OpenFile("activity.log", os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0600)
@@ -113,3 +120,4 @@ func log_writer(time time.Time, message string) {
 	fmt.Printf("Wrote %v into file.", s)
 	file.Close()
 }
+*/

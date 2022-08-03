@@ -65,6 +65,7 @@ func (s *Scheduler) Processor(ctx context.Context, j job, runtime time.Duration,
 			fmt.Println("KILLING PROCESSOR")
 			s.wg.Done()
 			clock.Stop()
+			s.StopAll()
 			return
 		default:
 			//fmt.Println("WOWWW")
