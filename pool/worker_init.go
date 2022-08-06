@@ -22,18 +22,18 @@ var (
 	DEFAULT key = "TEST"
 )
 
-func init() {
+/*func init() {
 
-	/*
+
 	*	This is a quick example of how to launch a crawler process.
 	*	Generate context with key value pair
 	*	Add process to scheduler
 	*	Create appropriate data channels
 	*	To stop scheduler, send exit channel from os ^c
-	 */
+
 
 	Launch_Prompt()
-}
+}*/
 
 func Display_Error(err error) {
 	fmt.Println(err)
@@ -56,16 +56,19 @@ func Ingest_Url(url string) string {
 	queue_wg := new(sync.WaitGroup)
 	Job_Queue := make(chan chan worker.Job_Type)
 	worker.Web_Drivers_Init(1, Job_Queue, queue_wg)
+	var arg interface{} = url
 	//append(scheduler.OngoingJobs, worker[0].Job)
 
 	//processor_trigger <- true
-	processor_trigger, Kill_s := scheduler.Add_Process(c1, worker.Generate_Root_Search, time.Second*10, true)
-	time.AfterFunc(5*time.Second, func() {
+	processor_trigger, _ := scheduler.Add_Process(c1, worker.Schedule_Ping, time.Minute*10, true, arg)
+	processor_trigger <- true
+
+	/*time.AfterFunc(5*time.Second, func() {
 		processor_trigger <- true
 	})
-	time.AfterFunc(30*time.Second, func() {
+	time.AfterFunc(5*time.Minute, func() {
 		Kill_s <- true
-	})
+	})*/
 	//scheduler.StopAll()
 	//log_writer(time.Now(), "Triggered search on "+url+" finsihed in ...")
 

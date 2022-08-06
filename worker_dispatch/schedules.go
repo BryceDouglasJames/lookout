@@ -10,7 +10,32 @@ import (
 
 var Driver_Pool chan chan Job_Type
 
-func Schedule_Grailed_User_Search(ctx context.Context) {
+func Schedule_Ping(ctx context.Context, args interface{}) {
+	wg := sync.WaitGroup{}
+
+	switch args.(type) {
+	case string:
+		fmt.Printf("%v is an interface string\n", args)
+	default:
+		fmt.Println("THIS IS EMPTY")
+	}
+
+	t := fmt.Sprintf("%v", args)
+	fmt.Printf("\n\n\nPinging website %v,,,\n", t)
+
+	temp := Pinger{
+		ctx:  ctx,
+		wg:   &wg,
+		link: t,
+		//timout: 10*time.Minute,
+	}
+	temp.Do()
+	wg.Wait()
+
+	//log.Println("finished grabbing screenshot.")
+}
+
+func Schedule_Grailed_User_Search(ctx context.Context, args interface{}) {
 	log.Println("Started a Grail search")
 	wg := sync.WaitGroup{}
 
@@ -30,7 +55,7 @@ func Schedule_Grailed_User_Search(ctx context.Context) {
 
 }
 
-func Generate_Root_Search(ctx context.Context) {
+func Generate_Root_Search(ctx context.Context, args interface{}) {
 	log.Println("Started General Search ...")
 
 	wg := sync.WaitGroup{}

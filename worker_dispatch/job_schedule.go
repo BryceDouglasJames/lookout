@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-type job func(ctx context.Context)
+type job func(ctx context.Context, args interface{})
 type Scheduler struct {
 	wg            *sync.WaitGroup
 	OngoingJobs   []*Job_Type
@@ -30,7 +30,7 @@ func CreateScheduler() *Scheduler {
 *	When adding a process, you can return n channels
 *	to control it's flow through the processor
  */
-func (s *Scheduler) Add_Process(ctx context.Context, j job, runtime time.Duration, isActive bool) (chan bool, chan bool) {
+func (s *Scheduler) Add_Process(ctx context.Context, j job, runtime time.Duration, isActive bool, job_args interface{}) (chan bool, chan bool) {
 	//TODO: Create doc lmao
 	ctx, cancel := context.WithCancel(ctx)
 	s.Cancellations = append(s.Cancellations, cancel)
@@ -41,12 +41,12 @@ func (s *Scheduler) Add_Process(ctx context.Context, j job, runtime time.Duratio
 
 	//run routine through processor.
 	//schedule_trigger <- true
-	go s.Processor(ctx, j, runtime, s.OngoingJobs, s.Cancellations, schedule_trigger, active_trigger)
+	go s.Processor(ctx, j, runtime, s.OngoingJobs, s.Cancellations, schedule_trigger, active_trigger, job_args)
 	return schedule_trigger, active_trigger
 }
 
 func (s *Scheduler) Processor(ctx context.Context, j job, runtime time.Duration, active_queue []*Job_Type, Destroy_queue []context.CancelFunc,
-	schedule_t chan bool, active_t chan bool) {
+	schedule_t chan bool, active_t chan bool, job_args interface{}) {
 
 	clock := time.NewTicker(runtime)
 
@@ -54,7 +54,7 @@ func (s *Scheduler) Processor(ctx context.Context, j job, runtime time.Duration,
 		select {
 		case <-schedule_t:
 			fmt.Println("ACTIVE", active_t)
-			s.Run_Process(ctx, j, true)
+			go s.Run_Process(ctx, j, true, job_args)
 		case <-active_t:
 			fmt.Println("KILLING PROCESSOR, SCHEDULE", schedule_t)
 			s.wg.Done()
@@ -68,16 +68,16 @@ func (s *Scheduler) Processor(ctx context.Context, j job, runtime time.Duration,
 			s.StopAll()
 			return
 		default:
-			//fmt.Println("WOWWW")
-			time.Sleep(1 * time.Second)
+			fmt.Println("WOWWW")
+			time.Sleep(5 * time.Second)
 		}
 	}
 }
 
-func (s *Scheduler) Run_Process(ctx context.Context, j job, active bool) {
+func (s *Scheduler) Run_Process(ctx context.Context, j job, active bool, job_args interface{}) {
 	//trigger that the search is active
 	if active {
-		j(ctx)
+		go j(ctx, job_args)
 	}
 
 }

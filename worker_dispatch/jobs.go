@@ -1,20 +1,21 @@
 package worker_dispatch
 
 import (
+	"context"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
-	"strings"
+	"os"
 	"sync"
 	"time"
 
 	"github.com/go-rod/rod"
 	"github.com/go-rod/rod/lib/devices"
 	"github.com/go-rod/rod/lib/input"
-	"golang.org/x/net/html"
+)
 
-	web "github.com/brycedouglasjames/lookout/web_interface"
+var (
+	general_logger *log.Logger
 )
 
 //functions that can be called from the outside...duh
@@ -44,17 +45,59 @@ func (job GetImage) Do() {
 	}
 	defer resp.Body.Close()
 
-	b, err := io.ReadAll(resp.Body)
+	/*b, err := io.ReadAll(resp.Body)
 	if err != nil {
 		log.Fatal(err)
 	}
 	doc, _ := html.Parse(strings.NewReader(string(b)))
 
-	web.Parse_Href_Tags(16, doc, "WIKI")
+	web.Parse_Href_Tags(16, doc, "WIKI")*/
+
 	job.wg.Done()
 }
 
 /*************************************/
+
+type Pinger struct {
+	ctx  context.Context
+	wg   *sync.WaitGroup
+	link string
+	//timout time.Duration
+}
+
+func (job Pinger) Do() {
+	file, err := os.OpenFile("activity.log", os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0600)
+	if err != nil {
+		os.Create("activity.log")
+		fmt.Println("ACTIVITY.LOG CREATED, PLEASE RUN AGAIN")
+	}
+	defer file.Close()
+
+	general_logger = log.New(file, "GENERAL:", log.Ldate|log.Ltime)
+	job.wg.Add(1)
+	timer := time.Now()
+	page := rod.New().MustConnect().MustPage(job.link)
+	page.MustWaitLoad().MustScreenshot("a.png")
+	general_logger.Printf("Started instance at %s\n", job.link)
+	for {
+		if time.Since(timer) >= time.Minute*1 {
+			break
+		}
+		time.Sleep(30 * time.Second)
+		page.Reload()
+		resp, err := http.Get(job.link)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer resp.Body.Close()
+
+		general_logger.Printf("Pinged website %+v\n", resp.Status)
+	}
+	general_logger.Printf("Finished pinging %s...\n", job.link)
+	fmt.Println("Finished...")
+	page.Close()
+	job.wg.Done()
+}
 
 /*******SEARCH GRAILED FOR ITEM BASED SEARCH*******/
 type Grailed_Items struct {
